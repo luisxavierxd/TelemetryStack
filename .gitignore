@@ -419,3 +419,6 @@ FodyWeavers.xsd
 
 # Additional instructions
 *.txt
+.env
+**/grafana/provisioning/dashboards/*.json
+CLAUDE.md
