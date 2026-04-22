@@ -135,9 +135,9 @@ docker compose down   # los datos persisten en volúmenes Docker
 
 ---
 
-## Stack Live — con internet *(en desarrollo)*
+## Stack Live — con internet
 
-InfluxDB Cloud + Grafana Cloud + HiveMQ. Sin Docker.
+InfluxDB Cloud + Grafana Cloud. Sin Docker.
 
 ### Setup
 
