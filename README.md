@@ -7,7 +7,7 @@ Stack de telemetría en tiempo real para vehículos SAE (Minibaja, Formula, Baja
 ESP32 LoRa TX ──915MHz──► ESP32 LoRa RX ──USB──► Python receiver ──► InfluxDB ──► Grafana
     (coche)                   (pits)
                                          └─ localDashboard/   Docker local      (sin internet)
-                                         └─ liveDashboard/    Cloud             (con internet) [en desarrollo]
+                                         └─ liveDashboard/    Cloud             (con internet)
                                          └─ htmlDashboard/    HTML standalone   (sin Docker)  [en desarrollo]
 ```
 
@@ -149,17 +149,14 @@ cp .env.example .env   # llenar con credenciales reales
 ### Receptor
 
 ```bash
-python3 lora_receiver_live.py --port COM3                  # ambos destinos
-python3 lora_receiver_live.py --port COM3 --target influx  # solo InfluxDB Cloud
-python3 lora_receiver_live.py --port COM3 --target mqtt    # solo HiveMQ
+python3 lora_receiver_live.py --port COM3                  # Windows
+python3 lora_receiver_live.py --port /dev/ttyUSB0          # Linux / Mac
 ```
 
 ### Simulador
 
 ```bash
-python3 dataSimulator/simulator.py                         # ambos destinos
-python3 dataSimulator/simulator.py --target influx
-python3 dataSimulator/simulator.py --target mqtt
+python3 dataSimulator/simulator.py
 python3 dataSimulator/simulator.py --rate 5                # 5 Hz
 ```
 
@@ -195,7 +192,7 @@ Si eres nuevo en el equipo: copia `.env.example` a `.env` en cada carpeta y pide
 
 ## Notas de arquitectura
 
-**HiveMQ** está integrado en el stack live pero es opcional (`--target influx` lo omite). Su propósito es alimentar el dashboard HTML via WebSocket MQTT.
+**HiveMQ** es exclusivo del dashboard HTML — publica los datos vía WebSocket MQTT para la visualización de baja latencia. El stack live estándar no lo requiere.
 
 **Buffer offline** — `lora_receiver_local.py` mantiene hasta 1000 puntos en RAM si InfluxDB no responde, y los reenvía automáticamente al reconectar.
 
