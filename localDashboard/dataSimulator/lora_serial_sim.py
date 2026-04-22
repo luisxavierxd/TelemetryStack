@@ -29,15 +29,17 @@ except ImportError:
     print("Install: pip install pyserial")
     sys.exit(1)
 
-# ─── Pista ────────────────────────────────────────────────────────────────────
-TRACK_CENTER_LAT = 20.6736
-TRACK_CENTER_LNG = -103.3440
+# ─── Pista (default: Mónaco — cambiar con --lat y --lng) ─────────────────────
+TRACK_CENTER_LAT = 43.7347
+TRACK_CENTER_LNG = 7.4206
 TRACK_RADIUS_DEG = 0.002
 
 
 # ─── Simulador del vehículo (misma lógica que simulator.py) ──────────────────
 class MinibajaSim:
-    def __init__(self):
+    def __init__(self, lat: float = TRACK_CENTER_LAT, lng: float = TRACK_CENTER_LNG):
+        self.track_lat         = lat
+        self.track_lng         = lng
         self.rpm               = 0.0
         self.speed             = 0.0
         self.suspension_height = 0.0
@@ -88,11 +90,11 @@ class MinibajaSim:
 
     @property
     def lat(self) -> float:
-        return round(TRACK_CENTER_LAT + TRACK_RADIUS_DEG * math.cos(self.angle), 6)
+        return round(self.track_lat + TRACK_RADIUS_DEG * math.cos(self.angle), 6)
 
     @property
     def lng(self) -> float:
-        return round(TRACK_CENTER_LNG + TRACK_RADIUS_DEG * math.sin(self.angle), 6)
+        return round(self.track_lng + TRACK_RADIUS_DEG * math.sin(self.angle), 6)
 
     def to_lora_dict(self) -> dict:
         """
@@ -125,6 +127,10 @@ def main():
                    help="Hz de envío (default: 2 — igual que LoRa real)")
     p.add_argument("--noise", action="store_true",
                    help="Agrega líneas de debug como haría el ESP32 (prueba el parser)")
+    p.add_argument("--lat", type=float, default=TRACK_CENTER_LAT,
+                   help=f"Latitud central de la pista (default: {TRACK_CENTER_LAT} — Mónaco)")
+    p.add_argument("--lng", type=float, default=TRACK_CENTER_LNG,
+                   help=f"Longitud central de la pista (default: {TRACK_CENTER_LNG} — Mónaco)")
     args = p.parse_args()
 
     interval = 1.0 / args.rate
@@ -138,7 +144,7 @@ def main():
         print(f"  ¿Está instalado com0com y creado el par COM10<->COM11?")
         sys.exit(1)
 
-    sim = MinibajaSim()
+    sim = MinibajaSim(lat=args.lat, lng=args.lng)
     print(f"\nEnviando a {args.rate} Hz por {args.port} — Ctrl+C para detener")
     print("-" * 60)
 

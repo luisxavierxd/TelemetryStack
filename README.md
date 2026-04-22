@@ -1,7 +1,7 @@
-# MadRams Telemetry — Minibaja SAE
+# TelemetryStack — SAE Telemetry System
 
-Sistema de telemetría en tiempo real para el vehículo Minibaja SAE del equipo MadRams.
-Tres stacks independientes según disponibilidad de internet y necesidades en pits.
+Desarrollado por **Luis Xavier García Pimentel Ascencio**.
+Stack de telemetría en tiempo real para vehículos SAE (Minibaja, Formula, Baja). Diseñado para ser adoptado por cualquier equipo con configuración mínima.
 
 ```
 ESP32 LoRa TX ──915MHz──► ESP32 LoRa RX ──USB──► Python receiver ──► InfluxDB ──► Grafana
@@ -16,10 +16,11 @@ ESP32 LoRa TX ──915MHz──► ESP32 LoRa RX ──USB──► Python rece
 ## Estructura del repositorio
 
 ```
-MadRamsTelemetry/
+TelemetryStack/
 ├── README.md
 ├── LICENSE
 ├── .gitignore
+├── .gitattributes
 ├── localDashboard/
 │   ├── .env                        ← credenciales reales (NO commitear)
 │   ├── .env.example                ← plantilla para nuevos miembros
@@ -40,6 +41,31 @@ MadRamsTelemetry/
 └── htmlDashboard/                  ← en desarrollo
     └── README.md
 ```
+
+---
+
+## Adaptar al equipo
+
+Solo hay que editar el archivo `.env` — nada más en el código cambia entre equipos.
+
+```bash
+cd localDashboard
+cp .env.example .env
+```
+
+Variables a personalizar en `.env`:
+
+| Variable | Descripción | Ejemplo |
+|---|---|---|
+| `INFLUX_TOKEN` | Token de InfluxDB | `mi-token-secreto` |
+| `INFLUX_PASSWORD` | Password admin de InfluxDB | `mi-password` |
+| `GF_PASSWORD` | Password de Grafana | `mi-password` |
+| `INFLUX_ORG` | Nombre del equipo/organización | `FormulaUDG` |
+| `INFLUX_BUCKET` | Bucket de datos | `Telemetry` |
+| `TEAM_NAME` | Tag del equipo en InfluxDB | `FormulaUDG` |
+| `INFLUX_MEASUREMENT` | Nombre del measurement | `formula` |
+
+Para los datos GPS del simulador, usar `--lat` y `--lng` con las coordenadas de la pista real. Los datos GPS en producción vienen directamente del sensor GPS del vehículo.
 
 ---
 
@@ -88,14 +114,17 @@ Requiere par de puertos seriales virtuales:
 - **Linux** — `socat -d -d pty,raw,echo=0,link=/tmp/ttyV0 pty,raw,echo=0,link=/tmp/ttyV1`
 
 ```bash
-python3 dataSimulator/lora_serial_sim.py --port COM10        # terminal 1
-python3 lora_receiver_local.py --port COM11                  # terminal 2
+# Con coordenadas de tu pista (default: Mónaco)
+python3 dataSimulator/lora_serial_sim.py --port COM10 --lat 20.6736 --lng -103.3440
+python3 lora_receiver_local.py --port COM11
 ```
 
-Flags:
+Flags del simulador:
 ```
---rate 2     Hz de envío (default: 2, igual que LoRa real)
---noise      Agrega líneas de debug del ESP32
+--lat 43.7347    Latitud central de la pista (default: Mónaco)
+--lng 7.4206     Longitud central de la pista (default: Mónaco)
+--rate 2         Hz de envío (default: 2, igual que LoRa real)
+--noise          Agrega líneas de debug del ESP32
 ```
 
 ### Detener
@@ -138,22 +167,20 @@ python3 dataSimulator/simulator.py --rate 5                # 5 Hz
 
 ## Dashboard HTML — sin Docker *(en desarrollo)*
 
-Dashboard standalone en HTML/JS que se conecta directamente vía WebSocket MQTT (HiveMQ) para mostrar telemetría con baja latencia, sin necesidad de Docker ni Grafana.
-
-Útil para competencias donde la latencia de Grafana Cloud (~1-2s) no es suficiente o donde no se puede instalar Docker.
+Dashboard standalone en HTML/JS que se conecta vía WebSocket MQTT (HiveMQ) para mostrar telemetría con baja latencia. Sin Docker, sin instalación — solo abrir en el navegador.
 
 ---
 
 ## Formato JSON del ESP32
 
-Ambos stacks esperan el mismo formato por serial:
+Todos los stacks esperan el mismo formato por serial:
 
 ```json
 {"rpm":2100,"speed":35,"temp":82,"temp_cvt":75,"vbat":12.4,
  "suspension":-0.05,"lat":20.6736,"lng":-103.344,"gps_fix":1,"lap":3,"throttle":60}
 ```
 
-Campos mínimos requeridos: `rpm`, `temp`. Cualquier otra línea se ignora.
+Campos mínimos requeridos: `rpm`, `temp`. Las coordenadas GPS vienen del sensor del vehículo cuando `gps_fix=1`.
 
 ---
 
@@ -161,11 +188,6 @@ Campos mínimos requeridos: `rpm`, `temp`. Cualquier otra línea se ignora.
 
 Las credenciales van en archivos `.env` — nunca en el código ni en el repo.
 Cada stack tiene su propio `.env` basado en `.env.example`.
-
-```
-localDashboard/.env   → INFLUX_TOKEN, INFLUX_PASSWORD, GF_PASSWORD
-liveDashboard/.env    → token InfluxDB Cloud, credenciales HiveMQ
-```
 
 Si eres nuevo en el equipo: copia `.env.example` a `.env` en cada carpeta y pide las credenciales al líder de telemetría.
 
@@ -175,6 +197,6 @@ Si eres nuevo en el equipo: copia `.env.example` a `.env` en cada carpeta y pide
 
 **HiveMQ** está integrado en el stack live pero es opcional (`--target influx` lo omite). Su propósito es alimentar el dashboard HTML via WebSocket MQTT.
 
-**Weather data** — el simulador live obtiene datos de [Open-Meteo](https://open-meteo.com/) sin API key y los guarda en InfluxDB como measurement `weather` para correlacionar condiciones con telemetría.
-
 **Buffer offline** — `lora_receiver_local.py` mantiene hasta 1000 puntos en RAM si InfluxDB no responde, y los reenvía automáticamente al reconectar.
+
+**Weather data** — el simulador live obtiene datos de [Open-Meteo](https://open-meteo.com/) sin API key y los guarda como measurement `weather` para correlacionar condiciones con telemetría.

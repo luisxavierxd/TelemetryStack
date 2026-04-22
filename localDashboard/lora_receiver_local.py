@@ -43,9 +43,11 @@ except ImportError:
 
 # ─── Config InfluxDB local (coincide con docker-compose.yml) ─────────────────
 INFLUX_URL    = "http://localhost:8086"
-INFLUX_TOKEN  = os.environ.get("INFLUX_TOKEN", "")
-INFLUX_ORG    = "MadRams"
-INFLUX_BUCKET = "Telemetry"
+INFLUX_TOKEN       = os.environ.get("INFLUX_TOKEN", "")
+INFLUX_ORG         = os.environ.get("INFLUX_ORG", "")
+INFLUX_BUCKET      = os.environ.get("INFLUX_BUCKET", "Telemetry")
+INFLUX_MEASUREMENT = os.environ.get("INFLUX_MEASUREMENT", "vehicle")
+TEAM_NAME          = os.environ.get("TEAM_NAME", "")
 
 MAX_BUFFER    = 1000   # puntos en RAM si InfluxDB no responde
 
@@ -143,9 +145,9 @@ def parse_packet(line: str) -> Point | None:
     if "rpm" not in d or "temp" not in d:
         return None
 
-    p = (Point("minibaja")
+    p = (Point(INFLUX_MEASUREMENT)
         .tag("device", "vehicle")
-        .tag("team",   "MadRams")
+        .tag("team",   TEAM_NAME)
         .field("rpm",        float(d.get("rpm",        0)))
         .field("speed",      float(d.get("speed",      0)))
         .field("temp",       float(d.get("temp",       0)))
