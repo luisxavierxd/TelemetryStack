@@ -50,7 +50,8 @@ TRACK_CENTER_LAT = float(os.getenv("TRACK_LAT",  "43.734722"))
 TRACK_CENTER_LNG = float(os.getenv("TRACK_LNG",  "7.420556"))
 TRACK_RADIUS_DEG = 0.002
 MAX_BUFFER       = 500
-TEAM_NAME        = os.getenv("TEAM_NAME", "equipo")
+TEAM_NAME          = os.getenv("TEAM_NAME",          "equipo")
+INFLUX_MEASUREMENT = os.getenv("INFLUX_MEASUREMENT", "coche")
 
 
 # ─── InfluxDB con autoreconnect y buffer ──────────────────────────────────────
@@ -263,7 +264,7 @@ class MinibajaSim:
         }
 
     def to_influx_point(self) -> Point:
-        return (Point("minibaja")
+        return (Point(INFLUX_MEASUREMENT)
             .tag("device", "simulator")
             .tag("team",   TEAM_NAME)
             .field("rpm",        float(round(self.rpm)))
@@ -340,7 +341,7 @@ def main():
     # ── MQTT ──────────────────────────────────────────────────────────────────
     mqtt_client = None
     if use_mqtt:
-        mqtt_client = mqtt.Client(client_id="sim-minibaja-live", protocol=mqtt.MQTTv311)
+        mqtt_client = mqtt.Client(client_id=f"sim-{INFLUX_MEASUREMENT}-live", protocol=mqtt.MQTTv311)
         mqtt_client.username_pw_set(args.mqtt_user, args.mqtt_pass)
         mqtt_client.tls_set(tls_version=ssl.PROTOCOL_TLS_CLIENT)
         mqtt_client.reconnect_delay_set(min_delay=1, max_delay=30)
@@ -380,7 +381,7 @@ def main():
             sim.update(interval)
 
             if use_mqtt and mqtt_client:
-                mqtt_client.publish("minibaja/telemetry", json.dumps(sim.to_dict()))
+                mqtt_client.publish(f"{INFLUX_MEASUREMENT}/telemetry", json.dumps(sim.to_dict()))
 
             if use_influx and influx:
                 influx.write(sim.to_influx_point())

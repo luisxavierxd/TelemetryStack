@@ -31,7 +31,8 @@ except ImportError:
     print("  [warn] python-dotenv no instalado — pip install python-dotenv")
     import os
 
-TEAM_NAME = os.getenv("TEAM_NAME", "equipo")
+TEAM_NAME         = os.getenv("TEAM_NAME",         "equipo")
+INFLUX_MEASUREMENT = os.getenv("INFLUX_MEASUREMENT", "coche")
 
 try:
     import serial
@@ -136,7 +137,7 @@ def parse_packet(line: str) -> Point | None:
     if "rpm" not in d or "temp" not in d:
         return None
 
-    p = (Point("minibaja")
+    p = (Point(INFLUX_MEASUREMENT)
         .tag("device", "vehicle")
         .tag("team",   TEAM_NAME)
         .field("rpm",        float(d.get("rpm",        0)))
@@ -219,7 +220,7 @@ def main():
     # ── MQTT ──────────────────────────────────────────────────────────────────
     mqtt_client = None
     if use_mqtt:
-        mqtt_client = mqtt.Client(client_id="lora-receiver-live", protocol=mqtt.MQTTv311)
+        mqtt_client = mqtt.Client(client_id=f"lora-receiver-{INFLUX_MEASUREMENT}", protocol=mqtt.MQTTv311)
         mqtt_client.username_pw_set(args.mqtt_user, args.mqtt_pass)
         mqtt_client.tls_set(tls_version=ssl.PROTOCOL_TLS_CLIENT)
         mqtt_client.reconnect_delay_set(min_delay=1, max_delay=30)
@@ -281,7 +282,7 @@ def main():
                 try:
                     d = json.loads(raw.strip())
                     d["ts"] = int(time.time() * 1000)
-                    mqtt_client.publish("minibaja/telemetry", json.dumps(d))
+                    mqtt_client.publish(f"{INFLUX_MEASUREMENT}/telemetry", json.dumps(d))
                 except Exception as e:
                     print(f"  [mqtt] publish error: {e}")
 
