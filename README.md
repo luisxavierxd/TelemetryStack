@@ -168,6 +168,113 @@ python3 dataSimulator/simulator.py --target mqtt           # solo MQTT
 
 ---
 
+## Dashboards en Grafana
+
+El proceso es idéntico para el stack local y el stack live. La única diferencia es la URL de Grafana y la datasource configurada.
+
+| Stack | URL Grafana | Datasource |
+|---|---|---|
+| Local | http://localhost:3000 | InfluxDB local (Docker) |
+| Live | https://grafana.com (cloud) | InfluxDB Cloud |
+
+### Campos disponibles
+
+Todos los paneles consultan el measurement definido en `.env` (`INFLUX_MEASUREMENT`, por defecto `coche`) y el bucket `INFLUX_BUCKET`. Campos disponibles:
+
+| Campo | Tipo | Descripción |
+|---|---|---|
+| `rpm` | float | Revoluciones del motor |
+| `speed` | float | Velocidad (km/h) |
+| `temp` | float | Temperatura motor (°C) |
+| `temp_cvt` | float | Temperatura CVT (°C) |
+| `vbat` | float | Voltaje de batería (V) |
+| `suspension` | float | Desplazamiento suspensión (m) |
+| `throttle` | float | Posición del acelerador (%) |
+| `lat` / `lng` | float | Coordenadas GPS (solo con `gps_fix=1`) |
+| `lap` | int | Número de vuelta |
+
+Tags: `device=vehicle`, `team=<TEAM_NAME>`.
+
+---
+
+### Crear paneles desde la UI
+
+1. Abre Grafana → **Dashboards → New Dashboard → Add visualization**.
+2. Selecciona la datasource de InfluxDB y elige lenguaje **Flux**.
+3. Escribe la query para el campo que quieras graficar. Ejemplos:
+
+**RPM en tiempo real**
+```flux
+from(bucket: "Telemetry")
+  |> range(start: -5m)
+  |> filter(fn: (r) => r._measurement == "coche")
+  |> filter(fn: (r) => r._field == "rpm")
+```
+
+**Temperatura motor vs CVT**
+```flux
+from(bucket: "Telemetry")
+  |> range(start: -5m)
+  |> filter(fn: (r) => r._measurement == "coche")
+  |> filter(fn: (r) => r._field == "temp" or r._field == "temp_cvt")
+```
+
+**Velocidad máxima por vuelta**
+```flux
+from(bucket: "Telemetry")
+  |> range(start: -1h)
+  |> filter(fn: (r) => r._measurement == "coche" and r._field == "speed")
+  |> aggregateWindow(every: 1m, fn: max)
+```
+
+4. Ajusta el tipo de panel (Time series, Gauge, Stat, Geomap para GPS).
+5. Guarda el panel con un nombre descriptivo.
+
+> Para el mapa GPS usa el panel **Geomap** con los campos `lat` y `lng`. Grafana los reconoce automáticamente si están en la misma fila del resultado Flux — usa un `pivot` si es necesario:
+> ```flux
+> |> pivot(rowKey: ["_time"], columnKey: ["_field"], valueColumn: "_value")
+> |> filter(fn: (r) => exists r.lat and exists r.lng)
+> ```
+
+---
+
+### Exportar e importar dashboards como JSON (código)
+
+Grafana permite guardar dashboards completos en JSON para versionarlos o compartirlos.
+
+**Exportar desde la UI:**
+1. Abre el dashboard → menú (⋮) → **Share → Export → Save to file**.
+2. Guarda el `.json` en `localDashboard/grafana/provisioning/dashboards/` o en `liveDashboard/grafana/dashboards/`.
+
+**Importar desde JSON:**
+1. Grafana → **Dashboards → Import → Upload JSON file**.
+2. Selecciona el archivo y elige la datasource correcta cuando se pida.
+
+**Provisionar automáticamente al arrancar (solo stack local):**
+
+Crea el archivo `localDashboard/grafana/provisioning/dashboards/dashboards.yml`:
+```yaml
+apiVersion: 1
+providers:
+  - name: MadRams
+    type: file
+    options:
+      path: /etc/grafana/provisioning/dashboards
+```
+
+Monta la carpeta en `docker-compose.yml`:
+```yaml
+grafana:
+  volumes:
+    - ./grafana/provisioning:/etc/grafana/provisioning
+```
+
+Al hacer `docker compose up`, Grafana carga los JSON automáticamente y los dashboards aparecen listos sin tocar la UI.
+
+> Los archivos `*.json` de dashboards están en `.gitignore` por defecto. Si quieres versionarlos, quita esa línea del `.gitignore` del stack correspondiente.
+
+---
+
 ## Dashboard HTML — sin Docker *(en desarrollo)*
 
 Dashboard standalone en HTML/JS que se conecta vía WebSocket MQTT (HiveMQ) para mostrar telemetría con baja latencia. Sin Docker, sin instalación — solo abrir en el navegador.
