@@ -55,17 +55,19 @@ cp .env.example .env
 
 Variables a personalizar en `.env`:
 
-| Variable | Descripción | Ejemplo |
-|---|---|---|
-| `INFLUX_TOKEN` | Token de InfluxDB | `mi-token-secreto` |
-| `INFLUX_PASSWORD` | Password admin de InfluxDB | `mi-password` |
-| `GF_PASSWORD` | Password de Grafana | `mi-password` |
-| `INFLUX_ORG` | Nombre del equipo/organización | `FormulaUDG` |
-| `INFLUX_BUCKET` | Bucket de datos | `Telemetry` |
-| `TEAM_NAME` | Tag del equipo en InfluxDB | `FormulaUDG` |
-| `INFLUX_MEASUREMENT` | Nombre del measurement | `formula` |
+| Variable | Descripción | Ejemplo | Stack |
+|---|---|---|---|
+| `INFLUX_TOKEN` | Token de InfluxDB | `mi-token-secreto` | ambos |
+| `INFLUX_PASSWORD` | Password admin de InfluxDB | `mi-password` | local |
+| `GF_PASSWORD` | Password de Grafana | `mi-password` | local |
+| `INFLUX_ORG` | Nombre de la organización en InfluxDB | `mi-equipo` | ambos |
+| `INFLUX_BUCKET` | Bucket de datos | `Telemetry` | ambos |
+| `INFLUX_MEASUREMENT` | Nombre del measurement (tipo de vehículo) | `coche` | ambos |
+| `TEAM_NAME` | Tag del equipo en cada punto de datos | `mi-equipo` | ambos |
+| `TRACK_LAT` | Latitud central de la pista (simulador) | `43.734722` | live |
+| `TRACK_LNG` | Longitud central de la pista (simulador) | `7.420556` | live |
 
-Para los datos GPS del simulador, usar `--lat` y `--lng` con las coordenadas de la pista real. Los datos GPS en producción vienen directamente del sensor GPS del vehículo.
+Los datos GPS en producción vienen directamente del sensor GPS del vehículo.
 
 ---
 
@@ -114,8 +116,8 @@ Requiere par de puertos seriales virtuales:
 - **Linux** — `socat -d -d pty,raw,echo=0,link=/tmp/ttyV0 pty,raw,echo=0,link=/tmp/ttyV1`
 
 ```bash
-# Con coordenadas de tu pista (default: Mónaco)
-python3 dataSimulator/lora_serial_sim.py --port COM10 --lat 20.6736 --lng -103.3440
+# Default: Mónaco. Cambia la pista con --lat y --lng
+python3 dataSimulator/lora_serial_sim.py --port COM10
 python3 lora_receiver_local.py --port COM11
 ```
 
@@ -155,9 +157,13 @@ python3 lora_receiver_live.py --port /dev/ttyUSB0          # Linux / Mac
 
 ### Simulador
 
+La pista y el nombre del equipo se toman de `liveDashboard/.env` (`TRACK_LAT`, `TRACK_LNG`, `TEAM_NAME`).
+
 ```bash
 python3 dataSimulator/simulator.py
 python3 dataSimulator/simulator.py --rate 5                # 5 Hz
+python3 dataSimulator/simulator.py --target influx         # solo InfluxDB
+python3 dataSimulator/simulator.py --target mqtt           # solo MQTT
 ```
 
 ---
