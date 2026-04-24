@@ -46,10 +46,11 @@ except ImportError:
     sys.exit(1)
 
 # ─── Pista ────────────────────────────────────────────────────────────────────
-TRACK_CENTER_LAT = 20.6736
-TRACK_CENTER_LNG = -103.3440
+TRACK_CENTER_LAT = float(os.getenv("TRACK_LAT",  "43.734722"))
+TRACK_CENTER_LNG = float(os.getenv("TRACK_LNG",  "7.420556"))
 TRACK_RADIUS_DEG = 0.002
 MAX_BUFFER       = 500
+TEAM_NAME        = os.getenv("TEAM_NAME", "equipo")
 
 
 # ─── InfluxDB con autoreconnect y buffer ──────────────────────────────────────
@@ -175,7 +176,7 @@ class WeatherFetcher:
             return None
         return (Point("weather")
             .tag("source", "open-meteo")
-            .tag("team",   "MadRams")
+            .tag("team",   TEAM_NAME)
             .field("air_temp",     data["air_temp"])
             .field("humidity",     data["humidity"])
             .field("wind_speed",   data["wind_speed"])
@@ -264,7 +265,7 @@ class MinibajaSim:
     def to_influx_point(self) -> Point:
         return (Point("minibaja")
             .tag("device", "simulator")
-            .tag("team",   "MadRams")
+            .tag("team",   TEAM_NAME)
             .field("rpm",        float(round(self.rpm)))
             .field("speed",      float(round(self.speed, 1)))
             .field("temp",       float(round(self.temp_engine, 1)))

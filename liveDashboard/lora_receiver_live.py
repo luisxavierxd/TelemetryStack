@@ -31,6 +31,8 @@ except ImportError:
     print("  [warn] python-dotenv no instalado — pip install python-dotenv")
     import os
 
+TEAM_NAME = os.getenv("TEAM_NAME", "equipo")
+
 try:
     import serial
 except ImportError:
@@ -136,7 +138,7 @@ def parse_packet(line: str) -> Point | None:
 
     p = (Point("minibaja")
         .tag("device", "vehicle")
-        .tag("team",   "MadRams")
+        .tag("team",   TEAM_NAME)
         .field("rpm",        float(d.get("rpm",        0)))
         .field("speed",      float(d.get("speed",      0)))
         .field("temp",       float(d.get("temp",       0)))

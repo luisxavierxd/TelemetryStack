@@ -47,7 +47,7 @@ INFLUX_TOKEN       = os.environ.get("INFLUX_TOKEN", "")
 INFLUX_ORG         = os.environ.get("INFLUX_ORG", "")
 INFLUX_BUCKET      = os.environ.get("INFLUX_BUCKET", "Telemetry")
 INFLUX_MEASUREMENT = os.environ.get("INFLUX_MEASUREMENT", "vehicle")
-TEAM_NAME          = os.environ.get("TEAM_NAME", "")
+TEAM_NAME          = os.environ.get("TEAM_NAME", "equipo")
 
 MAX_BUFFER    = 1000   # puntos en RAM si InfluxDB no responde
 
