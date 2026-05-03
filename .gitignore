@@ -422,3 +422,5 @@ FodyWeavers.xsd
 .env
 **/grafana/provisioning/dashboards/*.json
 CLAUDE.md
+/.claude/
+**/firmware/**/config.h

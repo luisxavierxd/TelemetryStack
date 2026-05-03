@@ -1,0 +1,50 @@
+#pragma once
+
+// Copy this file to config.h and fill in your values.
+// config.h is gitignored — never commit credentials or real pin assignments.
+
+// ─── WiFi (phone hotspot or fixed AP) ────────────────────────────────────────
+#define WIFI_SSID       "NombreDeRedWiFi"
+#define WIFI_PASSWORD   "ContraseñaWiFi"
+
+// ─── InfluxDB Cloud ───────────────────────────────────────────────────────────
+// URL example: https://us-east-1-1.aws.cloud2.influxdata.com
+#define INFLUX_URL      "https://<region>.aws.cloud2.influxdata.com"
+#define INFLUX_TOKEN    "tu-token-de-influxdb-cloud=="
+#define INFLUX_ORG      "tu-organizacion"
+#define INFLUX_BUCKET   "Telemetry"
+// Measurement name — must match INFLUX_MEASUREMENT in the live .env
+#define INFLUX_MEASUREMENT  "coche"
+// Team tag written on every point
+#define TEAM_NAME           "MadRams"
+
+// ─── Timezone for NTP sync (used for InfluxDB timestamps) ────────────────────
+// See: https://github.com/nayarsystems/posix_tz_db/blob/master/zones.csv
+#define TZ_INFO         "CST6CDT,M4.1.0,M10.5.0"  // Mexico Central
+
+// ─── GPS module (NMEA, UART2) ─────────────────────────────────────────────────
+#define GPS_RX          16
+#define GPS_TX          17
+#define GPS_BAUD      9600
+
+// ─── RPM sensor (hall effect or reed switch, interrupt-driven) ────────────────
+#define PIN_RPM              34
+#define RPM_PULSES_PER_REV    1
+
+// ─── NTC thermistors ─────────────────────────────────────────────────────────
+#define PIN_TEMP_ENGINE 32
+#define PIN_TEMP_CVT    33
+#define NTC_BETA        3950
+#define NTC_R25         10000
+#define NTC_RSERIES     10000
+
+// ─── Battery voltage divider ──────────────────────────────────────────────────
+#define PIN_VBAT        35
+#define VBAT_DIVIDER    4.0f
+
+// ─── Suspension potentiometer ────────────────────────────────────────────────
+#define PIN_SUSPENSION  36
+#define SUSPENSION_RANGE 0.15f
+
+// ─── Throttle position sensor ────────────────────────────────────────────────
+#define PIN_THROTTLE    39
