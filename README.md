@@ -25,14 +25,15 @@ ESP32 ──WiFi──► Phone hotspot ──Internet──► InfluxDB Cloud �
 
 ```
 TelemetryStack/
-├── README.md
-├── README.es.md
+├── README.md                       ← this file (English)
+├── README.es.md                    ← Spanish version
 ├── LICENSE
 ├── .gitignore
 ├── .gitattributes
 ├── localDashboard/
+│   ├── README.md                   ← full local stack guide
 │   ├── firmware/                   ← ESP32: TX (vehicle) + RX (pits) via LoRa
-│   │   ├── README.md
+│   │   ├── README.md               ← firmware architecture, tasks, SF/BW, config.h
 │   │   ├── arduino/                ← complete, ready to flash
 │   │   │   ├── transmitter/
 │   │   │   │   ├── transmitter.ino
@@ -46,6 +47,7 @@ TelemetryStack/
 │   │       ├── transmitter/
 │   │       └── receiver/
 │   ├── laptop/                     ← code to run on the pits laptop
+│   │   ├── README.md               ← quick reference for the three scripts
 │   │   ├── lora_receiver_local.py  ← serial → local InfluxDB
 │   │   ├── sd_upload.py            ← uploads SD card CSV → InfluxDB
 │   │   └── dataSimulator/
@@ -58,8 +60,9 @@ TelemetryStack/
 │           └── datasources/
 │               └── influxdb.yml
 ├── liveDashboard/
+│   ├── README.md                   ← full live stack guide
 │   ├── firmware/                   ← ESP32: TX direct to InfluxDB Cloud via WiFi
-│   │   ├── README.md
+│   │   ├── README.md               ← live firmware setup, config.h fields
 │   │   └── transmitter/
 │   │       ├── transmitter.ino     ← complete, ready to flash
 │   │       ├── config.h.example
