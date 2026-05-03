@@ -380,11 +380,11 @@ Dashboard standalone en HTML/JS que se conecta vía WebSocket MQTT (HiveMQ) para
 Todos los stacks esperan el mismo formato por serial:
 
 ```json
-{"rpm":2100,"speed":35,"temp":82,"temp_cvt":75,"vbat":12.4,
+{"msg_id":42,"rpm":2100,"speed":35,"temp":82,"temp_cvt":75,"vbat":12.4,
  "suspension":-0.05,"lat":20.6736,"lng":-103.344,"gps_fix":1,"lap":3,"throttle":60}
 ```
 
-Campos mínimos requeridos: `rpm`, `temp`. Las coordenadas GPS vienen del sensor del vehículo cuando `gps_fix=1`.
+Campos mínimos requeridos: `rpm`, `temp`. `msg_id` es un contador monotónico por arranque del ESP32; se usa para asignar timestamps deterministas (`t_anchor + msg_id × 200 ms`) y para deduplicar paquetes duplicados. Las coordenadas GPS vienen del sensor del vehículo cuando `gps_fix=1`.
 
 ---
 
