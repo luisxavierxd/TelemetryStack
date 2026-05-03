@@ -1,107 +1,110 @@
+> 🇺🇸 English · [🇲🇽 Español](README.es.md)
+
 # TelemetryStack — SAE Telemetry System
 
-Desarrollado por **Luis Xavier García Pimentel Ascencio**.
-Stack de telemetría en tiempo real para vehículos SAE (Minibaja, Formula, Baja). Diseñado para ser adoptado por cualquier equipo con configuración mínima.
+Developed by **Luis Xavier García Pimentel Ascencio**.
+Real-time telemetry stack for SAE off-road vehicles (Minibaja, Formula, Baja). Designed to be adopted by any team with minimal configuration.
 
-**Stack local (sin internet):**
+**Local stack (no internet):**
 ```
 ESP32 LoRa TX ──915MHz──► ESP32 LoRa RX ──USB──► lora_receiver_local.py ──► InfluxDB (Docker) ──► Grafana
-    (coche)                   (pits)                   localDashboard/laptop/
+    (vehicle)                  (pits)                  localDashboard/laptop/
 ```
 
-**Stack live (con internet):**
+**Live stack (internet required):**
 ```
-ESP32 ──WiFi──► Hotspot (celular) ──Internet──► InfluxDB Cloud ──► Grafana Cloud
-(coche)              liveDashboard/firmware/
+ESP32 ──WiFi──► Phone hotspot ──Internet──► InfluxDB Cloud ──► Grafana Cloud
+(vehicle)           liveDashboard/firmware/
 ```
 
-**Dashboard HTML** *(en desarrollo)* — standalone sin Docker, via WebSocket MQTT.
+**HTML Dashboard** *(in development)* — standalone, no Docker, via WebSocket MQTT.
 
 ---
 
-## Estructura del repositorio
+## Repository Structure
 
 ```
 TelemetryStack/
 ├── README.md
+├── README.es.md
 ├── LICENSE
 ├── .gitignore
 ├── .gitattributes
 ├── localDashboard/
-│   ├── firmware/                   ← ESP32: TX (coche) + RX (pits) via LoRa
+│   ├── firmware/                   ← ESP32: TX (vehicle) + RX (pits) via LoRa
 │   │   ├── README.md
-│   │   ├── arduino/                ← completo, listo para flashear
+│   │   ├── arduino/                ← complete, ready to flash
 │   │   │   ├── transmitter/
 │   │   │   │   ├── transmitter.ino
 │   │   │   │   ├── config.h.example
-│   │   │   │   └── config.h        ← gitignored, llenar con valores reales
+│   │   │   │   └── config.h        ← gitignored, fill with real values
 │   │   │   └── receiver/
 │   │   │       ├── receiver.ino
 │   │   │       ├── config.h.example
 │   │   │       └── config.h
-│   │   └── cpp/                    ← esqueleto ESP-IDF (estructura + TODOs)
+│   │   └── cpp/                    ← ESP-IDF skeleton (structure + TODOs)
 │   │       ├── transmitter/
 │   │       └── receiver/
-│   ├── laptop/                     ← código a correr en la laptop de pits
-│   │   ├── lora_receiver_local.py  ← serial → InfluxDB local
-│   │   ├── sd_upload.py            ← sube CSV de SD card → InfluxDB
+│   ├── laptop/                     ← code to run on the pits laptop
+│   │   ├── lora_receiver_local.py  ← serial → local InfluxDB
+│   │   ├── sd_upload.py            ← uploads SD card CSV → InfluxDB
 │   │   └── dataSimulator/
-│   │       └── lora_serial_sim.py  ← simula ESP32 por serial virtual
+│   │       └── lora_serial_sim.py  ← simulates ESP32 over virtual serial
 │   ├── docker-compose.yml
-│   ├── .env                        ← credenciales reales (NO commitear)
-│   ├── .env.example                ← plantilla para nuevos miembros
+│   ├── .env                        ← real credentials (DO NOT commit)
+│   ├── .env.example                ← template for new team members
 │   └── grafana/
 │       └── provisioning/
 │           └── datasources/
 │               └── influxdb.yml
 ├── liveDashboard/
-│   ├── firmware/                   ← ESP32: TX directo a InfluxDB Cloud via WiFi
+│   ├── firmware/                   ← ESP32: TX direct to InfluxDB Cloud via WiFi
 │   │   ├── README.md
 │   │   └── transmitter/
-│   │       ├── transmitter.ino     ← completo, listo para flashear
+│   │       ├── transmitter.ino     ← complete, ready to flash
 │   │       ├── config.h.example
-│   │       └── config.h            ← gitignored, llenar con credenciales reales
+│   │       └── config.h            ← gitignored, fill with real credentials
 │   ├── dataSimulator/
-│   │   └── simulator.py            ← simula vehículo → InfluxDB Cloud
-│   ├── .env                        ← credenciales reales (NO commitear)
+│   │   └── simulator.py            ← simulates vehicle → InfluxDB Cloud
+│   ├── .env                        ← real credentials (DO NOT commit)
 │   └── .env.example
-└── htmlDashboard/                  ← en desarrollo
+└── htmlDashboard/                  ← in development
     └── README.md
 ```
 
 ---
 
-## Adaptar al equipo
+## Adapting to Your Team
 
-Solo hay que editar el archivo `.env` — nada más en el código cambia entre equipos.
+Only the `.env` file needs to be edited — nothing in the code changes between teams.
 
 ```bash
 cd localDashboard
 cp .env.example .env
 ```
 
-Variables a personalizar en `.env`:
+Variables to customize in `.env`:
 
-| Variable | Descripción | Ejemplo | Stack |
+| Variable | Description | Example | Stack |
 |---|---|---|---|
-| `INFLUX_TOKEN` | Token de InfluxDB | `mi-token-secreto` | ambos |
-| `INFLUX_PASSWORD` | Password admin de InfluxDB | `mi-password` | local |
-| `GF_PASSWORD` | Password de Grafana | `mi-password` | local |
-| `INFLUX_ORG` | Nombre de la organización en InfluxDB | `mi-equipo` | ambos |
-| `INFLUX_BUCKET` | Bucket de datos | `Telemetry` | ambos |
-| `INFLUX_MEASUREMENT` | Nombre del measurement que escriben los scripts de Python. Debe coincidir con el nombre que selecciones en el filtro **Measurement** de Grafana. Cada proyecto usa el suyo (ej. Minibaja SAE → `minibaja`, Formula SAE → `formula`). | `minibaja` | ambos |
-| `TEAM_NAME` | Tag del equipo en cada punto de datos | `mi-equipo` | ambos |
-| `TRACK_LAT` | Latitud central de la pista (simulador) | `43.734722` | live |
-| `TRACK_LNG` | Longitud central de la pista (simulador) | `7.420556` | live |
+| `INFLUX_TOKEN` | InfluxDB token | `my-secret-token` | both |
+| `INFLUX_PASSWORD` | InfluxDB admin password | `my-password` | local |
+| `GF_PASSWORD` | Grafana password | `my-password` | local |
+| `INFLUX_ORG` | InfluxDB organization name | `my-team` | both |
+| `INFLUX_BUCKET` | Data bucket | `Telemetry` | both |
+| `INFLUX_MEASUREMENT` | Measurement name written by Python scripts. Must match the **Measurement** filter in Grafana. Each project uses its own (e.g. Minibaja SAE → `minibaja`, Formula SAE → `formula`). | `minibaja` | both |
+| `TEAM_NAME` | Team tag on every data point | `my-team` | both |
+| `TRACK_LAT` | Track center latitude (simulator) | `43.734722` | live |
+| `TRACK_LNG` | Track center longitude (simulator) | `7.420556` | live |
 
-Los datos GPS en producción vienen directamente del sensor GPS del vehículo.
+GPS data in production comes directly from the vehicle's GPS sensor.
 
 ---
 
-## Requisitos generales
+## General Requirements
 
 - Python 3.10+
-- Docker Desktop (solo para stack local)
+- Docker Desktop (local stack only)
 
 ```bash
 pip install pyserial influxdb-client paho-mqtt python-dotenv requests
@@ -109,39 +112,39 @@ pip install pyserial influxdb-client paho-mqtt python-dotenv requests
 
 ---
 
-## Stack Local — sin internet
+## Local Stack — no internet
 
-InfluxDB + Grafana corren en Docker en la laptop de pits. Dos buckets se crean automáticamente:
-- `telemetry-live` — datos LoRa en vivo a 2 Hz, retención 30 días
-- `telemetry-analisis` — datos de SD card a 10 Hz, retención indefinida
+InfluxDB + Grafana run in Docker on the pits laptop. Two buckets are created automatically:
+- `telemetry-live` — live LoRa data at 2 Hz, 30-day retention
+- `telemetry-analisis` — SD card data at 10 Hz, unlimited retention
 
 ### Setup
 
 ```bash
 cd localDashboard
-cp .env.example .env   # llenar con credenciales reales
+cp .env.example .env   # fill with real credentials
 docker compose up -d
 ```
 
 - InfluxDB → http://localhost:8086
-- Grafana  → http://localhost:3000 (dashboards cargados automáticamente)
+- Grafana  → http://localhost:3000 (dashboards loaded automatically)
 
 ---
 
 ## Local Dashboard Usage
 
-### 1. Iniciar el stack
+### 1. Start the stack
 
 ```bash
 cd localDashboard
 docker compose up -d
 ```
 
-En el primer arranque InfluxDB crea ambos buckets (`telemetry-live` y `telemetry-analisis`) automáticamente vía el script `influxdb/init/create-buckets.sh`.
+On first boot, InfluxDB creates both buckets (`telemetry-live` and `telemetry-analisis`) automatically via the `influxdb/init/create-buckets.sh` script.
 
-### 2. Receptor LoRa en vivo
+### 2. Live LoRa receiver
 
-`--run_id` y `--test` son obligatorios y se escriben como tags en cada punto.
+`--run_id` and `--test` are required and are written as tags on every data point.
 
 ```bash
 # Windows
@@ -151,153 +154,153 @@ python3 laptop/lora_receiver_local.py --port COM3 --run_id run_042 --test suspen
 python3 laptop/lora_receiver_local.py --port /dev/ttyUSB0 --run_id run_042 --test suspension_rocks
 ```
 
-Argumentos:
+Arguments:
 
-| Argumento | Descripción | Ejemplo |
+| Argument | Description | Example |
 |---|---|---|
-| `--port` | Puerto serial | `COM3` / `/dev/ttyUSB0` |
-| `--run_id` | ID de la corrida | `run_042` |
-| `--test` | Nombre del test | `suspension_rocks` |
-| `--baud` | Baudrate (default: 115200) | `9600` |
+| `--port` | Serial port | `COM3` / `/dev/ttyUSB0` |
+| `--run_id` | Run identifier | `run_042` |
+| `--test` | Test name | `suspension_rocks` |
+| `--baud` | Baud rate (default: 115200) | `9600` |
 
-### 3. Subir datos de SD card (post-carrera)
+### 3. Upload SD card data (post-race)
 
-Formato esperado del CSV: `sample_idx` como primera columna + campos de sensores como float.
+Expected CSV format: `sample_idx` as the first column + sensor fields as floats.
 
 ```bash
-python3 laptop/sd_upload.py --run_id run_042 --test suspension_rocks --csv /ruta/a/datos.csv
+python3 laptop/sd_upload.py --run_id run_042 --test suspension_rocks --csv /path/to/data.csv
 ```
 
-El script:
-1. Escanea hasta 100 filas del CSV buscando las primeras con sensores activos (descarta filas donde `rpm==0` y `temp==0` — sensores aún no inicializados).
-2. Para cada fila válida, consulta el punto LoRa live con el mismo `sample_idx` correspondiente (`sd_idx // 2`, ya que SD va a 10 Hz y LoRa a 5 Hz).
-3. Calcula el ancla como `live_ts - sd_idx × 100 ms` para cada par encontrado y toma la mediana.
-4. Aborta solo si no se encontró ninguna coincidencia entre CSV y live (run/test incorrecto, o SD y LoRa no tienen overlap temporal).
-5. Inserta todos los puntos en `telemetry-analisis` con timestamps a 10 Hz.
+The script:
+1. Scans up to 100 CSV rows looking for the first ones with active sensors (skips rows where `rpm==0` and `temp==0` — sensors not yet initialized).
+2. For each valid row, queries the live LoRa point with the exact same `sample_idx` (the ESP32 uses a single counter for both `msg_id` in LoRa and `sample_idx` in CSV).
+3. Computes the anchor as `live_ts - sd_idx × 100 ms` for each matched pair and takes the median.
+4. Aborts only if no match is found between CSV and live data (wrong run/test, or SD and LoRa have no temporal overlap).
+5. Inserts all points into `telemetry-analisis` with 10 Hz timestamps.
 
-### 4. Seleccionar corrida y test en Grafana
+### 4. Selecting run and test in Grafana
 
-Ambos dashboards tienen tres variables en la parte superior:
+Both dashboards have three variables at the top:
 
-| Variable | Descripción |
+| Variable | Description |
 |---|---|
-| **Measurement** | Nombre del measurement en InfluxDB. Se puebla automáticamente con los measurements disponibles en el bucket. Debe coincidir con `INFLUX_MEASUREMENT` de tu `.env`. |
-| **Run ID** | ID de la corrida (`--run_id` del script). Soporta multi-selección para comparar runs. |
-| **Test** | Nombre del test (`--test` del script). |
+| **Measurement** | InfluxDB measurement name. Auto-populated from available measurements in the bucket. Must match `INFLUX_MEASUREMENT` in your `.env`. |
+| **Run ID** | Run identifier (`--run_id` from the script). Supports multi-select to compare runs. |
+| **Test** | Test name (`--test` from the script). |
 
-> **Distinción clave:** `INFLUX_MEASUREMENT` en `.env` es el nombre con el que los scripts *escriben* los datos. El filtro **Measurement** en Grafana es con el que los dashboards *leen* esos mismos datos. Si el script escribe `minibaja` y Grafana filtra por `minibaja`, los paneles muestran datos. Si no coinciden, los paneles quedan vacíos.  
-> Esto permite usar el mismo stack sin tocar código: un equipo Minibaja pone `INFLUX_MEASUREMENT=minibaja`, uno de Formula pone `INFLUX_MEASUREMENT=formula`, y los dashboards funcionan igual para ambos.
+> **Key distinction:** `INFLUX_MEASUREMENT` in `.env` is the name the scripts use to *write* data. The **Measurement** filter in Grafana is what the dashboards use to *read* that data. If the script writes `minibaja` and Grafana filters by `minibaja`, panels show data. If they don't match, panels will be empty.  
+> This lets you use the same stack without touching code: a Minibaja team sets `INFLUX_MEASUREMENT=minibaja`, a Formula team sets `INFLUX_MEASUREMENT=formula`, and the dashboards work the same for both.
 
-Los dashboards disponibles son:
+Available dashboards:
 
-| Dashboard | Bucket | Uso |
+| Dashboard | Bucket | Use |
 |---|---|---|
-| **Live Telemetry** | `telemetry-live` | Monitoreo en carrera, 2 Hz |
-| **Post-Race Analysis** | `telemetry-analisis` | Análisis post-carrera, 10 Hz |
+| **Live Telemetry** | `telemetry-live` | In-race monitoring, 2 Hz |
+| **Post-Race Analysis** | `telemetry-analisis` | Post-race analysis, 10 Hz |
 
-En el dashboard Post-Race Analysis:
-- El panel **Overlay** superpone datos LoRa y SD del mismo run en el mismo eje temporal.
-- El panel **Comparación multi-corrida** muestra una línea por `run_id`; selecciona varios runs en el filtro.
-- El panel **Estadísticas** muestra max, min y avg de cada campo para el run seleccionado.
+In the Post-Race Analysis dashboard:
+- The **Overlay** panel overlays LoRa and SD data from the same run on the same time axis.
+- The **Multi-run comparison** panel shows one line per `run_id`; select multiple runs in the filter.
+- The **Statistics** panel shows max, min, and avg for each field for the selected run.
 
 ---
 
-### Simulador (sin hardware)
+### Simulator (no hardware)
 
-Requiere par de puertos seriales virtuales:
-- **Windows** — [com0com](https://sourceforge.net/projects/com0com/), crea par COM10↔COM11
+Requires a virtual serial port pair:
+- **Windows** — [com0com](https://sourceforge.net/projects/com0com/), create pair COM10↔COM11
 - **Linux** — `socat -d -d pty,raw,echo=0,link=/tmp/ttyV0 pty,raw,echo=0,link=/tmp/ttyV1`
 
 ```bash
 python3 laptop/dataSimulator/lora_serial_sim.py --port COM10
-python3 laptop/lora_receiver_local.py --port COM11 --run_id sim_001 --test simulacion
+python3 laptop/lora_receiver_local.py --port COM11 --run_id sim_001 --test simulation
 ```
 
-Flags del simulador:
+Simulator flags:
 ```
---lat 43.7347    Latitud central de la pista (default: Mónaco)
---lng 7.4206     Longitud central de la pista (default: Mónaco)
---rate 2         Hz de envío (default: 2, igual que LoRa real)
---noise          Agrega líneas de debug del ESP32
+--lat 43.7347    Track center latitude (default: Monaco)
+--lng 7.4206     Track center longitude (default: Monaco)
+--rate 2         Send rate in Hz (default: 2, same as real LoRa)
+--noise          Add ESP32-style debug lines
 ```
 
-### Detener
+### Stop
 
 ```bash
-docker compose down   # los datos persisten en volúmenes Docker
+docker compose down   # data persists in Docker volumes
 ```
 
 ---
 
-## Stack Live — con internet
+## Live Stack — internet required
 
-InfluxDB Cloud + Grafana Cloud. Sin Docker. El ESP32 del vehículo escribe directamente a la nube via WiFi (hotspot del celular) — no se necesita laptop en pits.
+InfluxDB Cloud + Grafana Cloud. No Docker. The vehicle ESP32 writes directly to the cloud via WiFi (phone hotspot) — no laptop needed at pits.
 
 ### Setup
 
 ```bash
 cd liveDashboard
-cp .env.example .env   # llenar con credenciales reales (para el simulador)
+cp .env.example .env   # fill with real credentials (for the simulator)
 ```
 
 ### Firmware
 
-1. Llena `firmware/transmitter/config.h` con las credenciales de InfluxDB Cloud y la red WiFi.
-2. Flashea `firmware/transmitter/transmitter.ino` al ESP32 del vehículo.
-3. El ESP32 se conecta automáticamente al hotspot al encenderse.
+1. Fill `firmware/transmitter/config.h` with your InfluxDB Cloud credentials and WiFi network.
+2. Flash `firmware/transmitter/transmitter.ino` to the vehicle ESP32.
+3. The ESP32 connects automatically to the hotspot on power-up.
 
-Ver `liveDashboard/firmware/README.md` para instrucciones detalladas.
+See `liveDashboard/firmware/README.md` for detailed instructions.
 
-### Simulador (sin hardware)
+### Simulator (no hardware)
 
-La pista y el nombre del equipo se toman de `liveDashboard/.env` (`TRACK_LAT`, `TRACK_LNG`, `TEAM_NAME`).
+Track location and team name are read from `liveDashboard/.env` (`TRACK_LAT`, `TRACK_LNG`, `TEAM_NAME`).
 
 ```bash
 cd liveDashboard
 python3 dataSimulator/simulator.py
 python3 dataSimulator/simulator.py --rate 5                # 5 Hz
-python3 dataSimulator/simulator.py --target influx         # solo InfluxDB
-python3 dataSimulator/simulator.py --target mqtt           # solo MQTT
+python3 dataSimulator/simulator.py --target influx         # InfluxDB only
+python3 dataSimulator/simulator.py --target mqtt           # MQTT only
 ```
 
 ---
 
-## Dashboards en Grafana
+## Grafana Dashboards
 
-El proceso es idéntico para el stack local y el stack live. La única diferencia es la URL de Grafana y la datasource configurada.
+The process is identical for the local and live stacks. The only difference is the Grafana URL and the configured datasource.
 
-| Stack | URL Grafana | Datasource |
+| Stack | Grafana URL | Datasource |
 |---|---|---|
-| Local | http://localhost:3000 | InfluxDB local (Docker) |
+| Local | http://localhost:3000 | Local InfluxDB (Docker) |
 | Live | https://grafana.com (cloud) | InfluxDB Cloud |
 
-### Campos disponibles
+### Available fields
 
-Todos los paneles consultan el measurement definido en `.env` (`INFLUX_MEASUREMENT`, por defecto `coche`) y el bucket `INFLUX_BUCKET`. Campos disponibles:
+All panels query the measurement defined in `.env` (`INFLUX_MEASUREMENT`, default `coche`) and the bucket `INFLUX_BUCKET`. Available fields:
 
-| Campo | Tipo | Descripción |
+| Field | Type | Description |
 |---|---|---|
-| `rpm` | float | Revoluciones del motor |
-| `speed` | float | Velocidad (km/h) |
-| `temp` | float | Temperatura motor (°C) |
-| `temp_cvt` | float | Temperatura CVT (°C) |
-| `vbat` | float | Voltaje de batería (V) |
-| `suspension` | float | Desplazamiento suspensión (m) |
-| `throttle` | float | Posición del acelerador (%) |
-| `lat` / `lng` | float | Coordenadas GPS (solo con `gps_fix=1`) |
-| `lap` | int | Número de vuelta |
+| `rpm` | float | Engine RPM |
+| `speed` | float | Speed (km/h) |
+| `temp` | float | Engine temperature (°C) |
+| `temp_cvt` | float | CVT temperature (°C) |
+| `vbat` | float | Battery voltage (V) |
+| `suspension` | float | Suspension displacement (m) |
+| `throttle` | float | Throttle position (%) |
+| `lat` / `lng` | float | GPS coordinates (only when `gps_fix=1`) |
+| `lap` | int | Lap number |
 
 Tags: `device=vehicle`, `team=<TEAM_NAME>`.
 
 ---
 
-### Crear paneles desde la UI
+### Creating panels from the UI
 
-1. Abre Grafana → **Dashboards → New Dashboard → Add visualization**.
-2. Selecciona la datasource de InfluxDB y elige lenguaje **Flux**.
-3. Escribe la query para el campo que quieras graficar. Ejemplos:
+1. Open Grafana → **Dashboards → New Dashboard → Add visualization**.
+2. Select the InfluxDB datasource and choose **Flux** as the query language.
+3. Write the query for the field you want to chart. Examples:
 
-**RPM en tiempo real**
+**Real-time RPM**
 ```flux
 from(bucket: "Telemetry")
   |> range(start: -5m)
@@ -305,7 +308,7 @@ from(bucket: "Telemetry")
   |> filter(fn: (r) => r._field == "rpm")
 ```
 
-**Temperatura motor vs CVT**
+**Engine temp vs CVT temp**
 ```flux
 from(bucket: "Telemetry")
   |> range(start: -5m)
@@ -313,7 +316,7 @@ from(bucket: "Telemetry")
   |> filter(fn: (r) => r._field == "temp" or r._field == "temp_cvt")
 ```
 
-**Velocidad máxima por vuelta**
+**Max speed per lap**
 ```flux
 from(bucket: "Telemetry")
   |> range(start: -1h)
@@ -321,10 +324,10 @@ from(bucket: "Telemetry")
   |> aggregateWindow(every: 1m, fn: max)
 ```
 
-4. Ajusta el tipo de panel (Time series, Gauge, Stat, Geomap para GPS).
-5. Guarda el panel con un nombre descriptivo.
+4. Adjust the panel type (Time series, Gauge, Stat, Geomap for GPS).
+5. Save the panel with a descriptive name.
 
-> Para el mapa GPS usa el panel **Geomap** con los campos `lat` y `lng`. Grafana los reconoce automáticamente si están en la misma fila del resultado Flux — usa un `pivot` si es necesario:
+> For the GPS map use the **Geomap** panel with `lat` and `lng` fields. Grafana recognizes them automatically if they are in the same Flux result row — use a `pivot` if needed:
 > ```flux
 > |> pivot(rowKey: ["_time"], columnKey: ["_field"], valueColumn: "_value")
 > |> filter(fn: (r) => exists r.lat and exists r.lng)
@@ -332,21 +335,21 @@ from(bucket: "Telemetry")
 
 ---
 
-### Exportar e importar dashboards como JSON (código)
+### Exporting and importing dashboards as JSON
 
-Grafana permite guardar dashboards completos en JSON para versionarlos o compartirlos.
+Grafana lets you save complete dashboards as JSON for versioning or sharing.
 
-**Exportar desde la UI:**
-1. Abre el dashboard → menú (⋮) → **Share → Export → Save to file**.
-2. Guarda el `.json` en `localDashboard/grafana/provisioning/dashboards/` o en `liveDashboard/grafana/dashboards/`.
+**Export from the UI:**
+1. Open the dashboard → menu (⋮) → **Share → Export → Save to file**.
+2. Save the `.json` in `localDashboard/grafana/provisioning/dashboards/` or `liveDashboard/grafana/dashboards/`.
 
-**Importar desde JSON:**
+**Import from JSON:**
 1. Grafana → **Dashboards → Import → Upload JSON file**.
-2. Selecciona el archivo y elige la datasource correcta cuando se pida.
+2. Select the file and choose the correct datasource when prompted.
 
-**Provisionar automáticamente al arrancar (solo stack local):**
+**Auto-provision on startup (local stack only):**
 
-Crea el archivo `localDashboard/grafana/provisioning/dashboards/dashboards.yml`:
+Create `localDashboard/grafana/provisioning/dashboards/dashboards.yml`:
 ```yaml
 apiVersion: 1
 providers:
@@ -356,78 +359,78 @@ providers:
       path: /etc/grafana/provisioning/dashboards
 ```
 
-Monta la carpeta en `docker-compose.yml`:
+Mount the folder in `docker-compose.yml`:
 ```yaml
 grafana:
   volumes:
     - ./grafana/provisioning:/etc/grafana/provisioning
 ```
 
-Al hacer `docker compose up`, Grafana carga los JSON automáticamente y los dashboards aparecen listos sin tocar la UI.
+On `docker compose up`, Grafana loads the JSON files automatically and dashboards appear ready without touching the UI.
 
-> Los archivos `*.json` de dashboards están en `.gitignore` por defecto. Si quieres versionarlos, quita esa línea del `.gitignore` del stack correspondiente.
-
----
-
-## Dashboard HTML — sin Docker *(en desarrollo)*
-
-Dashboard standalone en HTML/JS que se conecta vía WebSocket MQTT (HiveMQ) para mostrar telemetría con baja latencia. Sin Docker, sin instalación — solo abrir en el navegador.
+> Dashboard `*.json` files are gitignored by default. To version them, remove that line from the relevant stack's `.gitignore`.
 
 ---
 
-## Formato JSON del ESP32
+## HTML Dashboard — no Docker *(in development)*
 
-Todos los stacks esperan el mismo formato por serial:
+Standalone HTML/JS dashboard that connects via WebSocket MQTT (HiveMQ) to display telemetry with low latency. No Docker, no installation — just open in a browser.
+
+---
+
+## ESP32 JSON Format
+
+All stacks expect the same serial format:
 
 ```json
 {"msg_id":42,"rpm":2100,"speed":35,"temp":82,"temp_cvt":75,"vbat":12.4,
  "suspension":-0.05,"lat":20.6736,"lng":-103.344,"gps_fix":1,"lap":3,"throttle":60}
 ```
 
-Campos mínimos requeridos: `rpm`, `temp`. `msg_id` es un contador monotónico por arranque del ESP32; se usa para asignar timestamps deterministas (`t_anchor + msg_id × 200 ms`) y para deduplicar paquetes duplicados. Las coordenadas GPS vienen del sensor del vehículo cuando `gps_fix=1`.
+Minimum required fields: `rpm`, `temp`. `msg_id` is a monotonic counter per ESP32 boot; it is used to assign deterministic timestamps (`t_anchor + msg_id × 200 ms`) and to discard duplicate packets. GPS coordinates are written only when `gps_fix=1`.
 
 ---
 
-## Credenciales
+## Credentials
 
-Las credenciales van en archivos `.env` — nunca en el código ni en el repo.
-Cada stack tiene su propio `.env` basado en `.env.example`.
+Credentials go in `.env` files — never in code or in the repo.
+Each stack has its own `.env` based on `.env.example`.
 
-Si eres nuevo en el equipo: copia `.env.example` a `.env` en cada carpeta y pide las credenciales al líder de telemetría.
+If you're new to the team: copy `.env.example` to `.env` in each folder and ask the telemetry lead for the credentials.
 
 ---
 
-## Firmware ESP32
+## ESP32 Firmware
 
-Cada stack tiene su propia carpeta de firmware:
+Each stack has its own firmware folder:
 
-| Stack | Carpeta | Descripción |
+| Stack | Folder | Description |
 |---|---|---|
-| Local | `localDashboard/firmware/` | TX (coche) + RX (pits) via LoRa 915 MHz |
-| Live | `liveDashboard/firmware/` | Solo TX; envía directo a InfluxDB Cloud via WiFi |
+| Local | `localDashboard/firmware/` | TX (vehicle) + RX (pits) via LoRa 915 MHz |
+| Live | `liveDashboard/firmware/` | TX only; writes directly to InfluxDB Cloud via WiFi |
 
-El stack local tiene dos variantes de implementación:
+The local stack has two implementation variants:
 
-| Variante | Estado | Descripción |
+| Variant | Status | Description |
 |---|---|---|
-| `localDashboard/firmware/arduino/` | **Completo** | Arduino + FreeRTOS. Listo para flashear. |
-| `localDashboard/firmware/cpp/` | Esqueleto | ESP-IDF nativo (C++). Estructura y tasks completos; inicialización de drivers con TODOs. |
+| `localDashboard/firmware/arduino/` | **Complete** | Arduino + FreeRTOS. Ready to flash. |
+| `localDashboard/firmware/cpp/` | Skeleton | Native ESP-IDF (C++). Task structure complete; driver initialization marked TODO. |
 
-Ver `localDashboard/firmware/README.md` para instrucciones de setup, arquitectura de tasks y selección de SF/BW.
-Ver `liveDashboard/firmware/README.md` para el setup del firmware live.
+See `localDashboard/firmware/README.md` for setup instructions, task architecture, and SF/BW selection.
+See `liveDashboard/firmware/README.md` for live firmware setup.
 
 ---
 
-## Notas de arquitectura
+## Architecture Notes
 
-**Firmware — RTOS:** El transmisor corre tres FreeRTOS tasks: `taskSampler` (10 Hz, core 1), `taskLoRaSend` (5 Hz, core 0), `taskSDWrite` (10 Hz, core 1). LoRa en core 0 evita que el tiempo de transmisión (~70 ms a SF7/BW500) afecte el muestreo en core 1.
+**Firmware — RTOS:** The transmitter runs three FreeRTOS tasks: `taskSampler` (10 Hz, core 1), `taskLoRaSend` (5 Hz, core 0), `taskSDWrite` (10 Hz, core 1). Running LoRa on core 0 prevents the ~70 ms transmission time (at SF7/BW500) from affecting sensor sampling on core 1.
 
-**Firmware — dual SPI:** LoRa usa VSPI (pines 18/19/23) y la SD usa HSPI (14/12/13). Al ser buses independientes no se necesita mutex entre tasks.
+**Firmware — dual SPI:** LoRa uses VSPI (pins 18/19/23) and SD uses HSPI (14/12/13). Independent buses mean no mutex is needed between tasks.
 
-**Timestamps deterministas:** `lora_receiver_local.py` asigna timestamps de InfluxDB como `t_anchor + msg_id × 200 ms`. Si el receptor arranca tarde, el anchor se extrapola hacia atrás para que la rejilla de tiempos sea consistente desde el primer paquete. Los paquetes tardíos se insertan retroactivamente (InfluxDB acepta escrituras fuera de orden); solo los duplicados exactos se descartan.
+**Deterministic timestamps:** `lora_receiver_local.py` assigns InfluxDB timestamps as `t_anchor + msg_id × 200 ms`. If the receiver starts late, the anchor is extrapolated backward so the time grid is consistent from the first packet. Late packets are inserted retroactively (InfluxDB accepts out-of-order writes); only exact duplicates are discarded.
 
-**HiveMQ** es exclusivo del dashboard HTML — publica los datos vía WebSocket MQTT para la visualización de baja latencia. El stack live estándar no lo requiere.
+**HiveMQ** is exclusive to the HTML dashboard — it publishes data via WebSocket MQTT for low-latency visualization. The standard live stack does not require it.
 
-**Buffer offline** — `lora_receiver_local.py` mantiene hasta 1000 puntos en RAM si InfluxDB no responde, y los reenvía automáticamente al reconectar.
+**Offline buffer** — `lora_receiver_local.py` keeps up to 1000 points in RAM if InfluxDB is unreachable, and flushes them automatically on reconnect.
 
-**Weather data** — el simulador live obtiene datos de [Open-Meteo](https://open-meteo.com/) sin API key y los guarda como measurement `weather` para correlacionar condiciones con telemetría.
+**Weather data** — the live simulator fetches data from [Open-Meteo](https://open-meteo.com/) without an API key and stores it as the `weather` measurement to correlate conditions with telemetry.
