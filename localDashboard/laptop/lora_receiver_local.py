@@ -20,7 +20,7 @@ from collections import deque
 from pathlib import Path
 
 # Cargar .env si existe (para INFLUX_TOKEN)
-_env_path = Path(__file__).parent / ".env"
+_env_path = Path(__file__).parent.parent / ".env"
 if _env_path.exists():
     for _line in _env_path.read_text().splitlines():
         _line = _line.strip()
@@ -45,11 +45,12 @@ except ImportError:
 INFLUX_URL    = "http://localhost:8086"
 INFLUX_TOKEN       = os.environ.get("INFLUX_TOKEN", "")
 INFLUX_ORG         = os.environ.get("INFLUX_ORG", "")
-INFLUX_BUCKET      = os.environ.get("INFLUX_BUCKET", "Telemetry")
+INFLUX_BUCKET      = os.environ.get("INFLUX_BUCKET", "telemetry-live")
 INFLUX_MEASUREMENT = os.environ.get("INFLUX_MEASUREMENT", "vehicle")
 TEAM_NAME          = os.environ.get("TEAM_NAME", "equipo")
 
-MAX_BUFFER    = 1000   # puntos en RAM si InfluxDB no responde
+MAX_BUFFER         = 1000   # puntos en RAM si InfluxDB no responde
+LORA_INTERVAL_NS   = 200_000_000  # 200 ms entre mensajes (5 Hz)
 
 
 # ─── InfluxWriter con autoreconnect (igual que en simulador) ──────────────────
@@ -131,7 +132,7 @@ class InfluxWriter:
 
 
 # ─── Parseo del paquete JSON del ESP32 ───────────────────────────────────────
-def parse_packet(line: str) -> Point | None:
+def parse_packet(line: str, run_id: str, test: str, sample_idx: int) -> Point | None:
     """
     Convierte la línea JSON del serial en un Point de InfluxDB.
     Retorna None si la línea no es JSON válido o faltan campos.
@@ -148,6 +149,10 @@ def parse_packet(line: str) -> Point | None:
     p = (Point(INFLUX_MEASUREMENT)
         .tag("device", "vehicle")
         .tag("team",   TEAM_NAME)
+        .tag("run_id", run_id)
+        .tag("test",   test)
+        .tag("source", "lora")
+        .field("sample_idx", sample_idx)
         .field("rpm",        float(d.get("rpm",        0)))
         .field("speed",      float(d.get("speed",      0)))
         .field("temp",       float(d.get("temp",       0)))
@@ -172,6 +177,10 @@ def main():
     parser = argparse.ArgumentParser(description="Receptor LoRa Serial → InfluxDB local")
     parser.add_argument("--port",    required=True,
                         help="Puerto serial, ej: /dev/ttyUSB0 o COM3")
+    parser.add_argument("--run_id",  required=True,
+                        help="ID de la corrida, ej: run_042")
+    parser.add_argument("--test",    required=True,
+                        help="Nombre del test, ej: suspension_rocks")
     parser.add_argument("--baud",    type=int, default=115200,
                         help="Baudrate del receptor LoRa (default: 115200)")
     parser.add_argument("--influx-url",   default=INFLUX_URL)
@@ -202,6 +211,9 @@ def main():
 
     pkt_count  = 0
     err_count  = 0
+    sample_idx = 0
+    t_anchor   = None   # tiempo NS del primer paquete válido de esta sesión
+    seen_ids   = set()  # msg_ids ya escritos; descarta duplicados
     last_print = time.time()
 
     try:
@@ -216,7 +228,16 @@ def main():
             if not raw.strip():
                 continue
 
-            point = parse_packet(raw)
+            # Usar msg_id del ESP32 si está disponible, si no usar contador local.
+            # Esto permite detectar paquetes perdidos y calcular el timestamp correcto
+            # incluso cuando el receptor arranca tarde.
+            try:
+                _pre = json.loads(raw.strip())
+                resolved_idx = int(_pre.get("msg_id", sample_idx))
+            except (json.JSONDecodeError, ValueError, TypeError):
+                resolved_idx = sample_idx
+
+            point = parse_packet(raw, args.run_id, args.test, resolved_idx)
 
             if point is None:
                 # Línea de debug del ESP32 — imprimir para diagnóstico
@@ -226,8 +247,27 @@ def main():
                 err_count += 1
                 continue
 
+            # Fijar anchor en el primer paquete válido de esta sesión.
+            # Si el receptor arrancó tarde y msg_id > 0, el anchor se extrapola
+            # hacia atrás para que la rejilla de tiempos sea consistente desde 0.
+            if t_anchor is None:
+                t_anchor = time.time_ns() - resolved_idx * LORA_INTERVAL_NS
+
+            if resolved_idx in seen_ids:
+                print(f"  [lora] pkt {resolved_idx} descartado — duplicado")
+                err_count += 1
+                continue
+
+            expected_ns = t_anchor + resolved_idx * LORA_INTERVAL_NS
+            jitter_ms   = (time.time_ns() - expected_ns) / 1_000_000
+            if abs(jitter_ms) > LORA_INTERVAL_NS / 2 / 1_000_000:
+                print(f"  [lora] pkt {resolved_idx} tardío ({jitter_ms:+.0f} ms) — insertado retroactivamente")
+
+            seen_ids.add(resolved_idx)
+            point = point.time(expected_ns, write_precision="ns")
             influx.write(point)
             pkt_count += 1
+            sample_idx = resolved_idx + 1
 
             # Print resumen cada 5 segundos
             now = time.time()

@@ -1,0 +1,61 @@
+#pragma once
+
+// Copy this file to config.h and fill in your values.
+// config.h is gitignored — never commit real pin assignments or calibration values.
+
+// ─── LoRa (SX1276/SX1278) — VSPI ────────────────────────────────────────────
+// Wiring: LoRa board connected to ESP32 default VSPI bus
+#define LORA_SCK        18
+#define LORA_MISO       19
+#define LORA_MOSI       23
+#define LORA_CS          5
+#define LORA_RST        22
+#define LORA_DIO0       26
+#define LORA_DIO1       25
+
+// Frequency: 915.0 MHz for Americas, 868.0 for Europe
+#define LORA_FREQUENCY  915.0
+
+// SF 7–12 (lower = faster + shorter range, higher = slower + longer range).
+// At SF7/BW500 a 180-byte packet takes ~72 ms → supports 5 Hz.
+// At SF9/BW125 the same packet takes ~370 ms → limits to ~2 Hz.
+#define LORA_SF           7
+#define LORA_BW         500.0   // kHz
+#define LORA_CR           5     // coding rate 4/5
+#define LORA_POWER       17     // dBm (max 20)
+
+// ─── SD card — HSPI ──────────────────────────────────────────────────────────
+// Wiring: SD card module connected to ESP32 HSPI bus
+#define SD_SCK          14
+#define SD_MISO         12
+#define SD_MOSI         13
+#define SD_CS           15
+
+// ─── GPS module (NMEA, UART2) ─────────────────────────────────────────────────
+#define GPS_RX          16
+#define GPS_TX          17
+#define GPS_BAUD      9600
+
+// ─── RPM sensor (hall effect or reed switch, interrupt-driven) ────────────────
+#define PIN_RPM         34      // input-only GPIO; use INPUT_PULLUP if open-collector
+#define RPM_PULSES_PER_REV  1   // pulses per shaft revolution from your sensor
+
+// ─── NTC thermistors ─────────────────────────────────────────────────────────
+// Both wired as voltage dividers: 3V3 — NTC — PIN — R_SERIES — GND
+#define PIN_TEMP_ENGINE 32
+#define PIN_TEMP_CVT    33
+#define NTC_BETA        3950    // Beta coefficient (check datasheet)
+#define NTC_R25         10000   // Resistance at 25 °C (Ohms)
+#define NTC_RSERIES     10000   // Series resistor (Ohms)
+
+// ─── Battery voltage (resistor divider) ──────────────────────────────────────
+// Wiring: VBAT — R1 — PIN_VBAT — R2 — GND  →  VBAT_DIVIDER = (R1+R2)/R2
+#define PIN_VBAT        35
+#define VBAT_DIVIDER    4.0f    // Example: R1=30kΩ, R2=10kΩ → divider = 4.0
+
+// ─── Suspension potentiometer (linear, 0–3V3) ────────────────────────────────
+#define PIN_SUSPENSION  36      // VP (input only)
+#define SUSPENSION_RANGE 0.15f  // total travel in meters (e.g. ±75 mm → 0.15 m)
+
+// ─── Throttle position sensor (0–3V3 or 0.5–4.5V scaled to 0–3V3) ───────────
+#define PIN_THROTTLE    39      // VN (input only)

@@ -1,0 +1,18 @@
+#pragma once
+
+// Copy this file to config.h and fill in your values.
+// Must match the transmitter config exactly: same frequency, SF, BW, CR.
+
+// ─── LoRa (SX1276/SX1278) — VSPI / SPI2_HOST ────────────────────────────────
+#define LORA_SCK        18
+#define LORA_MISO       19
+#define LORA_MOSI       23
+#define LORA_CS          5
+#define LORA_RST        22
+#define LORA_DIO0       26
+#define LORA_DIO1       25
+
+#define LORA_FREQUENCY  915.0f
+#define LORA_SF             7
+#define LORA_BW         500.0f
+#define LORA_CR             5

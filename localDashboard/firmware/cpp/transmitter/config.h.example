@@ -1,0 +1,53 @@
+#pragma once
+
+// Copy this file to config.h and fill in your values.
+// config.h is gitignored — never commit real pin assignments or calibration values.
+
+// ─── LoRa (SX1276/SX1278) — VSPI / SPI2_HOST ────────────────────────────────
+#define LORA_SCK        18
+#define LORA_MISO       19
+#define LORA_MOSI       23
+#define LORA_CS          5
+#define LORA_RST        22
+#define LORA_DIO0       26
+#define LORA_DIO1       25
+
+#define LORA_FREQUENCY  915.0f  // MHz
+#define LORA_SF             7   // Spreading factor (7–12)
+#define LORA_BW         500.0f  // kHz — 500 needed for 5 Hz; use 125 for longer range at lower rate
+#define LORA_CR             5   // Coding rate 4/5
+#define LORA_POWER         17   // dBm
+
+// ─── SD card — HSPI / SPI3_HOST ──────────────────────────────────────────────
+#define SD_SCK          14
+#define SD_MISO         12
+#define SD_MOSI         13
+#define SD_CS           15
+
+// ─── GPS (UART_NUM_2) ────────────────────────────────────────────────────────
+#define GPS_RX_PIN      16
+#define GPS_TX_PIN      17
+#define GPS_BAUD      9600
+#define GPS_UART_NUM     2   // UART_NUM_2
+
+// ─── RPM sensor ──────────────────────────────────────────────────────────────
+#define RPM_GPIO_PIN        34
+#define RPM_PULSES_PER_REV   1
+
+// ─── ADC pins ────────────────────────────────────────────────────────────────
+#define ADC_TEMP_ENGINE   ADC1_CHANNEL_4   // GPIO32
+#define ADC_TEMP_CVT      ADC1_CHANNEL_5   // GPIO33
+#define ADC_VBAT          ADC1_CHANNEL_7   // GPIO35
+#define ADC_SUSPENSION    ADC1_CHANNEL_0   // GPIO36 (VP)
+#define ADC_THROTTLE      ADC1_CHANNEL_3   // GPIO39 (VN)
+
+// ─── NTC thermistor calibration ──────────────────────────────────────────────
+#define NTC_BETA        3950
+#define NTC_R25         10000   // Ohms at 25 °C
+#define NTC_RSERIES     10000   // Series resistor in voltage divider
+
+// ─── Battery voltage divider ──────────────────────────────────────────────────
+#define VBAT_DIVIDER    4.0f    // (R1+R2)/R2
+
+// ─── Suspension potentiometer ────────────────────────────────────────────────
+#define SUSPENSION_RANGE 0.15f  // total travel in meters
